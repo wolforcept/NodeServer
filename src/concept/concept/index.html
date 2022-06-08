@@ -1,0 +1,180 @@
+<html>
+
+<head>
+    <title>CONCEPT!</title>
+    <link rel="icon" type="image/png" href="images/14.png" />
+    <link rel="stylesheet" type="text/css" href="index.css">
+
+    <script src="../lib/jquery.min.js"></script>
+    <script src="constants.js"></script>
+    <script src="net.js"></script>
+
+    <script>
+
+        function helpClicked() {
+            let div = document.getElementById("helpDiv");
+            if (div.style.display != "block")
+                div.style.display = "block"
+            else
+                div.style.display = ""
+        }
+
+        function wordClicked() {
+            let div = document.getElementById("wordDiv");
+            if (div.style.display != "block")
+                div.style.display = "block"
+            else
+                div.style.display = ""
+        }
+
+        function newWordClicked() {
+            let div = document.getElementById("wordDiv");
+            div.innerHTML = "Your word: \"" + words[Math.floor(Math.random() * words.length)] + "\""
+            div.innerHTML = div.innerHTML.charAt(0).toUpperCase() + div.innerHTML.substring(1)
+        }
+
+    </script>
+</head>
+
+<body>
+
+    <div class="ui panel" id="helpDivButton" onclick="helpClicked()">?</div>
+    <div class="ui panel" id="wordDivButton" onclick="wordClicked()">W</div>
+    <div class="ui" id="panels">
+
+        <!-- <div id="idDiv" onclick="">629f37496a50f02a00012185</div> -->
+        <div class="panel" id="wordDiv" onclick="newWordClicked()">Get a random word!</div>
+        <div class="panel" id="helpDiv">
+            In Concept, your goal is to guess words through the association of icons.<br />
+            A player chooses a word or phrase that the other players need to guess.<br />
+            The player places concepts on board.<br />
+            The other players try to guess the chosen word.<br />
+        </div>
+    </div>
+
+
+    <div id="buttons"></div>
+
+    <script>
+
+        function fullWidth() {
+            return Math.max(
+                document.body.scrollWidth,
+                document.documentElement.scrollWidth,
+                document.body.offsetWidth,
+                document.documentElement.offsetWidth,
+                document.body.clientWidth,
+                document.documentElement.clientWidth
+            );
+        }
+
+        // TODO
+        // clear button
+
+        function createDragElement(element, event, canBeDeleted, moveOnStart) {
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            element.onmousedown = dragMouseDown;
+
+            element.style.position = "absolute";
+            element.style.top = event.y + "px";
+            element.style.left = event.x + "px";
+
+            function remove() {
+                if (canBeDeleted)
+                    document.body.removeChild(element)
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                if (e.button == 1) {
+                    remove()
+                } else {
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+
+                let finalY = 64 * Math.round((element.offsetTop - pos2) / 64)
+                let finalX = 64 * Math.round((element.offsetLeft - pos1) / 64)
+                element.style.top = finalY + "px";
+                element.style.left = finalX + "px";
+                document.onmouseup = null;
+                document.onmousemove = null;
+
+                if (finalX > fullWidth() - 280) {
+                    if (canBeDeleted)
+                        remove()
+                    else
+                        element.style.left = (fullWidth() - 280 - 64) + "px";
+                }
+            }
+
+            if (moveOnStart)
+                dragMouseDown(event)
+        }
+
+        function createNode(i, event, moveOnStart) {
+            var elemDiv = document.createElement('div');
+            elemDiv.className = "moveable"
+            elemDiv.innerHTML = `<img src="./images/${i}.png" width="64" height="64">`
+            document.body.appendChild(elemDiv);
+            createDragElement(elemDiv, { x: event.x - 32, y: event.y - 32 }, i != "base", moveOnStart)
+        }
+
+        function createButton(i) {
+            var buttons = document.getElementById("buttons")
+            var elemDiv = document.createElement('div');
+            elemDiv.className = "button"
+            elemDiv.innerHTML = `<img src="./images/${i}.png" title="${i}: ${tooltips[i]}" width="64" height="64">`
+            buttons.appendChild(elemDiv);
+            elemDiv.onmousedown = e => {
+                let bounds = elemDiv.getBoundingClientRect()
+                createNode(i, event, true);
+            }
+        }
+
+        function createBr(i) {
+            document.getElementById("buttons").appendChild(document.createElement('br'));
+        }
+
+        let titleIndex = 0;
+
+        function createHr(title) {
+            let h1 = document.createElement('h1')
+            h1.innerHTML = title
+            document.getElementById("buttons").appendChild(h1);
+            titleIndex++;
+        }
+
+        sections.forEach(section => {
+            createHr(section.title)
+            for (let i = section.from; i <= section.to; i++)
+                createButton(i)
+        });
+
+        createNode("base", {
+            x: 32 + 64 * Math.round((fullWidth() - 280) / 2 / 64),
+            y: 32 + 128
+        })
+
+    </script>
+
+
+</body>
+
+</html>
