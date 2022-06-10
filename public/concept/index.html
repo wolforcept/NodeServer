@@ -13,18 +13,43 @@
 
     <script>
 
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-        }
+
 
         const gridSize = 64;
 
+        function fullWidth() {
+            return Math.max(
+                document.body.scrollWidth,
+                document.documentElement.scrollWidth,
+                document.body.offsetWidth,
+                document.documentElement.offsetWidth,
+                document.body.clientWidth,
+                document.documentElement.clientWidth
+            );
+        }
+
+        function fullHeight() {
+            return Math.max(
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.offsetHeight,
+                document.body.clientHeight,
+                document.documentElement.clientHeight
+            );
+        }
+
+        function isMobile() {
+            return fullHeight() > fullWidth;
+            // return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        }
+
         function toggleVisibility(elementId) {
             let div = document.getElementById(elementId);
-            if (div.style.display != "block")
-                div.style.display = "block"
+            if (div.style.display === "block")
+                div.style.display = "none"
             else
-                div.style.display = ""
+                div.style.display = "block"
         }
 
         function newWordClicked() {
@@ -51,10 +76,34 @@
             saveState(copyText.value);
         }
 
-        //
-        //
-
         var state = []
+        var actionsTaken = []
+
+        function undoClicked() {
+            if (actionsTaken.length < 2)
+                return
+
+            while (state.length > 0)
+                removeNode(state[0])
+            actionsTaken.splice(0, 1)
+            loadState(actionsTaken[0])
+            saveState(null, true)
+        }
+
+        var canClear = false
+        function clearClicked() {
+            if (canClear)
+                saveState("")
+            else {
+                let b = document.getElementById('clearButton')
+                b.innerHTML = "Sure?"
+                canClear = true
+                setTimeout(() => {
+                    b.innerHTML = "Clear"
+                    canClear = false
+                }, 2000)
+            }
+        }
 
         function getStateString() {
             let stateString = ``;
@@ -75,8 +124,8 @@
             return getUrlSearch().get(paramName)
         }
 
-        function loadState() {
-            let stateString = getUrlParam('state');
+        function loadState(_stateString = null, save = true) {
+            let stateString = _stateString === null ? getUrlParam('state') : _stateString
             if (stateString) {
                 let elemStrings = stateString.split("_")
                 elemStrings.forEach(es => {
@@ -93,20 +142,23 @@
                 createNode("base", {
                     x: 32 + 64 * Math.round((fullWidth() - 280) / 2 / 64),
                     y: 32 + 128
-                })
+                }, save)
 
             }
             updateExportInput()
         }
 
-        function saveState(newStateString) {
+
+        function saveState(newStateString = null, isUndo = false) {
             let url = getUrlSearch()
-            let stateString = newStateString || getStateString()
+            let stateString = newStateString === null ? getStateString() : newStateString
             url.set('state', stateString)
             window.history.replaceState('', '', "?" + url.toString())
             updateExportInput()
-            if (newStateString)
+            if (newStateString !== null)
                 window.location.href = window.location.href
+            if (!isUndo)
+                actionsTaken.unshift(stateString)
         }
 
         function updateExportInput() {
@@ -116,24 +168,12 @@
         //
         //
 
-        function fullWidth() {
-            return Math.max(
-                document.body.scrollWidth,
-                document.documentElement.scrollWidth,
-                document.body.offsetWidth,
-                document.documentElement.offsetWidth,
-                document.body.clientWidth,
-                document.documentElement.clientWidth
-            );
-        }
-
         function removeNode(element) {
             document.body.removeChild(element)
             state.splice(state.indexOf(element), 1)
-            saveState()
         }
 
-        function createNode(i, event, save = true, startDrag = false) {
+        function createNode(i, event, save = false, startDrag = false) {
             var element = document.createElement('div');
             element.conceptIndex = i
             element.className = "moveable"
@@ -177,7 +217,7 @@
             buttons.appendChild(elemDiv);
             elemDiv.onmousedown = e => {
                 let bounds = elemDiv.getBoundingClientRect()
-                createNode(i, event, true, true);
+                createNode(i, event, isMobile(), true);
             }
         }
 
@@ -208,6 +248,8 @@
                 let exportInput = document.getElementById("exportInputButton");
                 exportInput.parentElement.removeChild(exportInput)
             }
+
+            toggleVisibility(`controlsDiv`)
         }
 
     </script>
@@ -220,8 +262,13 @@
         <div class="panel ui uibutton" onclick="toggleVisibility(`wordDiv`)">W</div>
         <div class="panel ui uibutton" onclick="toggleVisibility(`importDiv`)">I</div>
         <div class="panel ui uibutton" onclick="toggleVisibility(`exportDiv`)">E</div>
+        <div class="panel ui uibutton" onclick="toggleVisibility(`controlsDiv`)">C</div>
     </div>
     <div class="ui" id="uiPanels">
+        <div class="panel hidden" style="background-color: transparent; text-align: left; padding: 0;" id="controlsDiv">
+            <div id="clearButton" class="panel ui" style="display: inline-block; width: 68px; cursor: pointer; margin-bottom: 0;" onclick="clearClicked()">Clear</div>
+            <div id="undoButton" class="panel ui" style="display: inline-block; width: 68px; cursor: pointer; margin-bottom: 0;" onclick="undoClicked()">Undo</div>
+        </div>
         <div class="panel hidden" id="helpDiv">
             In Concept, your goal is to guess words through the association of icons.<br />
             A player chooses a word or phrase that the other players need to guess.<br />
