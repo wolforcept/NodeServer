@@ -192,7 +192,7 @@
                     let y = Math.round(rect.top / gridSize) * gridSize;
                     element.style.left = x + "px";
                     element.style.top = y + "px";
-                    if (x > fullWidth() - 280) {
+                    if (x > fullWidth() - 280 && !isMobile()) {
                         if (i == "base") {
                             element.style.left = (fullWidth() - 280 - 128) + "px"
                         } else
