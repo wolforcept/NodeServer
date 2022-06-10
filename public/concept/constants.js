@@ -1,9 +1,10 @@
 
 var sections = [
-    { title: "Main Concepts", from: 0, to: 47 },
+    { title: "Main Concepts", from: 0, to: 27 },
+    { title: "Main Concepts 2", from: 28, to: 47 },
     { title: "Body", from: 48, to: 55 },
-    { title: "Materials", from: 56, to: 69 },
-    { title: "?", from: 70, to: 77 },
+    { title: "Physics and Materials", from: 56, to: 69 },
+    { title: "States", from: 70, to: 77 },
     { title: "Shapes", from: 78, to: 105 },
     { title: "Colors", from: 106, to: 117 },
 ];

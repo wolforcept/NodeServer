@@ -7,20 +7,20 @@
 
     <script src="../lib/jquery.min.js"></script>
     <script src="constants.js"></script>
-    <script src="net.js"></script>
+
+    <script src="../lib/gsap/gsap.min.js"></script>
+    <script src="../lib/gsap/Draggable.min.js"></script>
 
     <script>
 
-        function helpClicked() {
-            let div = document.getElementById("helpDiv");
-            if (div.style.display != "block")
-                div.style.display = "block"
-            else
-                div.style.display = ""
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         }
 
-        function wordClicked() {
-            let div = document.getElementById("wordDiv");
+        const gridSize = isMobile() ? 128 : 64;
+
+        function toggleVisibility(elementId) {
+            let div = document.getElementById(elementId);
             if (div.style.display != "block")
                 div.style.display = "block"
             else
@@ -33,29 +33,88 @@
             div.innerHTML = div.innerHTML.charAt(0).toUpperCase() + div.innerHTML.substring(1)
         }
 
-    </script>
-</head>
+        function exportClicked() {
+            var copyText = document.getElementById("exportInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value)
+        }
 
-<body>
+        function exportFocused() {
+            var copyText = document.getElementById("exportInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+        }
 
-    <div class="ui panel" id="helpDivButton" onclick="helpClicked()">?</div>
-    <div class="ui panel" id="wordDivButton" onclick="wordClicked()">W</div>
-    <div class="ui" id="panels">
+        function importClicked() {
+            var copyText = document.getElementById("importInput");
+            saveState(copyText.value);
+        }
 
-        <!-- <div id="idDiv" onclick="">629f37496a50f02a00012185</div> -->
-        <div class="panel" id="wordDiv" onclick="newWordClicked()">Get a random word!</div>
-        <div class="panel" id="helpDiv">
-            In Concept, your goal is to guess words through the association of icons.<br />
-            A player chooses a word or phrase that the other players need to guess.<br />
-            The player places concepts on board.<br />
-            The other players try to guess the chosen word.<br />
-        </div>
-    </div>
+        //
+        //
 
+        var state = []
 
-    <div id="buttons"></div>
+        function getStateString() {
+            let stateString = ``;
+            state.forEach(e => {
+                let rect = e.getBoundingClientRect();
+                let x = parseInt(rect.left / gridSize)
+                let y = parseInt(rect.top / gridSize)
+                stateString += e.conceptIndex + "." + x + "." + y + "_"
+            });
+            return stateString.substring(0, stateString.length - 1)
+        }
 
-    <script>
+        function getUrlSearch() {
+            return new URLSearchParams((new URL(window.location.href)).search)
+        }
+
+        function getUrlParam(paramName) {
+            return getUrlSearch().get(paramName)
+        }
+
+        function loadState() {
+            let stateString = getUrlParam('state');
+            if (stateString) {
+                let elemStrings = stateString.split("_")
+                elemStrings.forEach(es => {
+                    let elemParts = es.split(".")
+                    if (elemParts.length == 3) {
+                        createNode(elemParts[0], {
+                            x: gridSize * elemParts[1] + gridSize / 2,
+                            y: gridSize * elemParts[2] + gridSize / 2
+                        }, false)
+                    }
+                })
+            } else {
+
+                createNode("base", {
+                    x: 32 + 64 * Math.round((fullWidth() - 280) / 2 / 64),
+                    y: 32 + 128
+                })
+
+            }
+            updateExportInput()
+        }
+
+        function saveState(newStateString) {
+            let url = getUrlSearch()
+            let stateString = newStateString || getStateString()
+            url.set('state', stateString)
+            window.history.replaceState('', '', "?" + url.toString())
+            updateExportInput()
+            if (newStateString)
+                window.location.href = window.location.href
+        }
+
+        function updateExportInput() {
+            document.getElementById("exportInput").value = getStateString()
+        }
+
+        //
+        //
 
         function fullWidth() {
             return Math.max(
@@ -68,83 +127,57 @@
             );
         }
 
-        // TODO
-        // clear button
-
-        function createDragElement(element, event, canBeDeleted, moveOnStart) {
-            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            element.onmousedown = dragMouseDown;
-
-            element.style.position = "absolute";
-            element.style.top = event.y + "px";
-            element.style.left = event.x + "px";
-
-            function remove() {
-                if (canBeDeleted)
-                    document.body.removeChild(element)
-            }
-
-            function dragMouseDown(e) {
-                e = e || window.event;
-                if (e.button == 1) {
-                    remove()
-                } else {
-                    pos3 = e.clientX;
-                    pos4 = e.clientY;
-                    document.onmouseup = closeDragElement;
-                    document.onmousemove = elementDrag;
-                }
-            }
-
-            function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                element.style.top = (element.offsetTop - pos2) + "px";
-                element.style.left = (element.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-
-                let finalY = 64 * Math.round((element.offsetTop - pos2) / 64)
-                let finalX = 64 * Math.round((element.offsetLeft - pos1) / 64)
-                element.style.top = finalY + "px";
-                element.style.left = finalX + "px";
-                document.onmouseup = null;
-                document.onmousemove = null;
-
-                if (finalX > fullWidth() - 280) {
-                    if (canBeDeleted)
-                        remove()
-                    else
-                        element.style.left = (fullWidth() - 280 - 64) + "px";
-                }
-            }
-
-            if (moveOnStart)
-                dragMouseDown(event)
+        function removeNode(element) {
+            document.body.removeChild(element)
+            state.splice(state.indexOf(element), 1)
+            saveState()
         }
 
-        function createNode(i, event, moveOnStart) {
-            var elemDiv = document.createElement('div');
-            elemDiv.className = "moveable"
-            elemDiv.innerHTML = `<img src="./images/${i}.png" width="64" height="64">`
-            document.body.appendChild(elemDiv);
-            createDragElement(elemDiv, { x: event.x - 32, y: event.y - 32 }, i != "base", moveOnStart)
+        function createNode(i, event, save = true, startDrag = false) {
+            var element = document.createElement('div');
+            element.conceptIndex = i
+            element.className = "moveable"
+            element.innerHTML = `<img src="./images/${i}.png" title="${i}: ${tooltips[i]}" width="${gridSize}" height="${gridSize}">`
+            element.style.top = (event.y - 32) + "px";
+            element.style.left = (event.x - 32) + "px";
+            if (i != "base" && isMobile()) {
+                element.style.left = (fullWidth() - 280 - 128) + "px";
+            }
+            document.body.appendChild(element);
+            let draggable = Draggable.create(element, {
+                type: "left,top",
+                onDragEnd: function (e) {
+                    var rect = element.getBoundingClientRect();
+                    let x = Math.round(rect.left / gridSize) * gridSize;
+                    let y = Math.round(rect.top / gridSize) * gridSize;
+                    element.style.left = x + "px";
+                    element.style.top = y + "px";
+                    if (x > fullWidth() - 280) {
+                        if (i == "base") {
+                            element.style.left = (fullWidth() - 280 - 128) + "px"
+                        } else
+                            removeNode(element)
+                    }
+                    saveState()
+                },
+            })[0];
+            if (startDrag)
+                draggable.startDrag(event)
+            state.push(element)
+            if (save)
+                saveState()
         }
 
         function createButton(i) {
             var buttons = document.getElementById("buttons")
             var elemDiv = document.createElement('div');
+            elemDiv.draggable = true
             elemDiv.className = "button"
             elemDiv.innerHTML = `<img src="./images/${i}.png" title="${i}: ${tooltips[i]}" width="64" height="64">`
             buttons.appendChild(elemDiv);
             elemDiv.onmousedown = e => {
                 let bounds = elemDiv.getBoundingClientRect()
-                createNode(i, event, true);
+                createNode(i, event, true, true);
             }
         }
 
@@ -161,19 +194,55 @@
             titleIndex++;
         }
 
-        sections.forEach(section => {
-            createHr(section.title)
-            for (let i = section.from; i <= section.to; i++)
-                createButton(i)
-        });
+        window.onload = () => {
 
-        createNode("base", {
-            x: 32 + 64 * Math.round((fullWidth() - 280) / 2 / 64),
-            y: 32 + 128
-        })
+            sections.forEach(section => {
+                createHr(section.title)
+                for (let i = section.from; i <= section.to; i++)
+                    createButton(i)
+            });
+
+            loadState();
+
+            if (!window.isSecureContext) {
+                let exportInput = document.getElementById("exportInputButton");
+                exportInput.parentElement.removeChild(exportInput)
+            }
+        }
 
     </script>
+</head>
 
+<body>
+
+    <div class="ui" id="uiButtonsPanel">
+        <div class="panel ui uibutton" onclick="toggleVisibility(`helpDiv`)">?</div>
+        <div class="panel ui uibutton" onclick="toggleVisibility(`wordDiv`)">W</div>
+        <div class="panel ui uibutton" onclick="toggleVisibility(`importDiv`)">I</div>
+        <div class="panel ui uibutton" onclick="toggleVisibility(`exportDiv`)">E</div>
+    </div>
+    <div class="ui" id="uiPanels">
+        <div class="panel hidden" id="helpDiv">
+            In Concept, your goal is to guess words through the association of icons.<br />
+            A player chooses a word or phrase that the other players need to guess.<br />
+            The player places concepts on board.<br />
+            The other players try to guess the chosen word.<br />
+        </div>
+        <div class="panel hidden" id="wordDiv" style="cursor: pointer;" onclick="newWordClicked()">Get a random word!</div>
+        <div class="panel hidden" id="importDiv">
+            To import, place your text here and click import:<br />
+            <input id="importInput" type="text" style="width: 270px;">
+            <button style="margin-left: 8px;" onclick="importClicked()">Import</button>
+        </div>
+        <div class="panel hidden" id="exportDiv">
+            To export, copy this text and save it somewhere:<br />
+            <input id="exportInput" type="text" style="width: 280px;" onfocus="exportFocused()">
+            <button id="exportInputButton" style="margin-left: 8px;" onclick="exportClicked()">Copy</button>
+        </div>
+    </div>
+
+
+    <div id="buttons"></div>
 
 </body>
 

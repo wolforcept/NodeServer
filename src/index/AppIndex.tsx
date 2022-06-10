@@ -1,6 +1,7 @@
 import React from 'react';
 import AppLink from './AppLink';
 import './style.css';
+import imageConcept from './images/concept.svg'
 
 function AppIndex() {
 
@@ -10,7 +11,7 @@ function AppIndex() {
                 <h1>Wolforce Projects</h1>
             </header>
             <div className=''>
-                <AppLink title="Concept" href="concept" />
+                <AppLink title="Concept" href="concept" image={imageConcept} />
             </div>
         </div>
     );
