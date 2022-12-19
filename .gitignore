@@ -24,4 +24,4 @@ yarn-error.log*
 
 /publicold
 package-lock.json
-/src/unused
+/unused
