@@ -1,18 +1,25 @@
-import React from 'react';
-import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppIndex from './index/AppIndex';
+import { FC } from 'react';
+import { MantineProvider, ColorSchemeProvider, ColorScheme } from '@mantine/core';
+// import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Theme from 'Theme';
+import Routes from 'Routes';
+import 'App.css'
+import Games from 'components/Games/Games';
+// const router = createBrowserRouter(Routes);
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" >
-          <Route index element={<AppIndex />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+const App: FC = () => {
+
+    return (
+
+        <MantineProvider withCSSVariables withGlobalStyles withNormalizeCSS theme={Theme} >
+            <ColorSchemeProvider colorScheme={'dark'} toggleColorScheme={(colorScheme?: ColorScheme | undefined) => { }}>
+                <Games />
+                {/* <RouterProvider router={router} /> */}
+            </ColorSchemeProvider>
+        </MantineProvider>
+
+    );
 }
 
 export default App;
+
