@@ -4,21 +4,12 @@ import Socket from 'components/Connector/Socket';
 import { ReactElement, useState } from 'react';
 import HueClueState from "common/hueclue/HueClueState";
 import Message from 'common/Message';
+import './HueClue.scss';
 
 const NUMBERS = 25;
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
-const useStyles = createStyles((theme) => ({
-    cell: {
-        width: 32,
-        height: 32,
-        margin: 4,
-        textAlign: 'center',
-        fontWeight: 'bold',
-    }
-}))
 
 function HueClue() {
-    const { classes } = useStyles();
 
     const [isConnected, setIsConnected] = useState(false)
     const [socket] = useState(new Socket('hueclue').message(onMessage))
@@ -31,11 +22,13 @@ function HueClue() {
     function onMessage(m: Message) {
         if (m.type === 'state') {
             setState(JSON.parse(m.payload) as HueClueState)
+            console.log("updated state")
         }
     }
 
-    function sendInput() {
-
+    function sendInput(type: string, payload: any) {
+        console.log({ type, payload })
+        socket.sendInput({ type, payload })
     }
 
     function createColorTable(): Array<ReactElement> {
@@ -46,7 +39,7 @@ function HueClue() {
 
         nrs.push(<td key={i++} style={{ backgroundColor: 'rgba(255, 255, 255, 0)' }}></td>)
         for (let r = 0; r < NUMBERS; r++)
-            nrs.push(<td key={i++} className={classes.cell} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>{r + 1}</td>)
+            nrs.push(<td key={i++} className='cell' style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>{r + 1}</td>)
         rows.push(<tr key={i++}>{nrs}</tr>)
 
         const nC = LETTERS.length - 1;
@@ -58,7 +51,7 @@ function HueClue() {
 
             const nrs: Array<ReactElement> = [];
 
-            nrs.push(<td key={i++} className={classes.cell} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>{LETTERS[c]}</td>)
+            nrs.push(<td key={i++} className='cell' style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}>{LETTERS[c]}</td>)
             const green = c * cC;
             for (let r = 0; r < NUMBERS; r++) {
                 const red = r * cR;
@@ -68,7 +61,7 @@ function HueClue() {
                 const _centerness2 = (1 - Math.abs((r - nR / 2) * 2 / nR));
                 const centerness = _centerness1 * _centerness2 * 128;
 
-                nrs.push(<td key={i++} className={classes.cell} style={{ backgroundColor: `rgba(${red + centerness}, ${green + centerness}, ${blue + centerness})` }}></td>)
+                nrs.push(<td onClick={() => sendInput("clickColor", { x: c, y: r })} key={i++} className='cell' style={{ backgroundColor: `rgba(${red + centerness}, ${green + centerness}, ${blue + centerness})` }}></td>)
             }
 
             rows.push(<tr key={i++}>{nrs}</tr>)
@@ -78,26 +71,27 @@ function HueClue() {
     }
 
     return (
-        <>
-            <table style={{ float: 'left' }}>
+        <div className='hueclue'>
+            <table>
                 <tbody>
                     {createColorTable()}
                 </tbody>
             </table>
-            <div style={{ float: 'left', width: 300, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Container style={{ textAlign: 'center' }}>
+            <div className='right' >
+                <div className='top'>
                     <h3>Clues:</h3>
+
                     {state && state.clues.length > 0 ? state.clues.map(x => <Text>x</Text>) : <Text>No clues yet.</Text>}
+
                     <h3>Score:</h3>
-                    {state && state.scores.length > 0 ? state.scores.map(x => <Text>x</Text>) : <Text></Text>}
-                </Container>
-                <Footer height='36px' >
-                    <Container>
-                        <Text>Current Clue Giver: </Text>
-                    </Container>
-                </Footer>
+                    {state && state.scores.length > 0 ? state.scores.map(x => <Text>x</Text>) : <Text>---</Text>}
+                </div>
+                <div className='bottom'>
+                    <h3>Current Clue Giver:</h3>
+                    <Text>test</Text>
+                </div>
             </div>
-        </>
+        </div>
     )
 }
 

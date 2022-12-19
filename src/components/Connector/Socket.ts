@@ -5,6 +5,7 @@ const port = process.env.PORT || 3001;
 export default class Socket {
 
     private gamename: string;
+    private roomcode: null | string = null;
     private socket?: WebSocket;
     private onMessage: null | ((m: any) => void) = null;
 
@@ -21,6 +22,11 @@ export default class Socket {
 
     connect(roomcode: string, onConnect: ((event: any) => void)): Socket {
 
+        if (!roomcode)
+            throw new Error("invalid roomcode");
+
+        this.roomcode = roomcode;
+
         console.log("[Socket] Connecting...")
         this.socket = new WebSocket(`ws://localhost:${port}/`);
         this.socket.onerror = (ev: Event) => {
@@ -28,7 +34,7 @@ export default class Socket {
         }
         this.socket.onopen = (e) => {
             console.log("[Socket] Connected!")
-            this.send({ type: 'createRoom', gamename: this.gamename, roomcode, payload: { test: false } })
+            this.send({ type: 'createRoom', gamename: this.gamename, roomcode: roomcode, payload: { test: false } })
             onConnect(e);
         };
         this.socket.onmessage = (m) => {
@@ -52,6 +58,12 @@ export default class Socket {
     send(object: Message) {
         if (this.socket)
             this.socket.send(JSON.stringify(object));
+    }
+
+
+    sendInput(payload: any) {
+        if (this.roomcode)
+            this.send({ gamename: this.gamename, roomcode: this.roomcode, type: "input", payload })
     }
 
 }

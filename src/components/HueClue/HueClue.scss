@@ -1,0 +1,41 @@
+.hueclue {
+
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: stretch;
+
+    font-size: larger;
+
+    table .cell {
+        width: 32px;
+        height: 32px;
+        margin: 4px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .right {
+        display: flex;
+        flex-direction: column;
+
+        width: 300px;
+        text-align: center;
+
+        .top {
+            flex-grow: 1;
+        }
+
+        .bottom {
+            margin-bottom: 20px;
+        }
+
+    }
+
+}
