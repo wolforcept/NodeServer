@@ -1,7 +1,9 @@
-import Player from "common/Player";
+import { AnySoaRecord } from "dns"
 
 export default interface HueClueState {
-    players: Player[]
+    round: number
+    type: 'clue' | 'vote'
     clues: string[]
-    scores: number[]
+    scores: any
+    cluegiver: string
 }

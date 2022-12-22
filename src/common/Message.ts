@@ -1,6 +1,10 @@
+export type MessageType = 'joinRoom' | 'joinedRoom' | 'getState' | 'state' | 'input' | 'players';
+
 export default interface Message {
-    type: 'createRoom' | 'sendToRoom' | 'getState' | 'state' | 'input'
+    type: MessageType
     roomcode: string
     gamename: string
-    payload: any
+    payload?: any
+    sender: string
 }
+

@@ -1,3 +1,4 @@
 export default interface Player {
-    username: string
+    username: string,
+    animal: string
 }

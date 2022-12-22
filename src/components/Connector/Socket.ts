@@ -1,58 +1,59 @@
 import Message from "common/Message";
+import Player from "common/Player";
 
 const port = process.env.PORT || 3001;
+const verbose = false;
 
 export default class Socket {
 
-    private gamename: string;
-    private roomcode: null | string = null;
+    public player: Player | null = null;
+
+    roomcode: null | string = null;
     private socket?: WebSocket;
-    private onMessage: null | ((m: any) => void) = null;
 
-    constructor(gamename: string) {
-        this.gamename = gamename
-    }
+    constructor(
+        private gamename: string,
+        private onMessage: ((m: Message) => void),
+    ) { }
 
-    // async test() {
-    //     const path = '/rooms';
-    //     console.log('testing connection to ' + path)
-    //     const response = await fetch(path);
-    //     console.log(response)
-    // }
-
-    connect(roomcode: string, onConnect: ((event: any) => void)): Socket {
+    connect(username: string, animal: string, roomcode: string, callback: () => void) {
 
         if (!roomcode)
             throw new Error("invalid roomcode");
+        if (!animal)
+            throw new Error("invalid animal");
+        if (!username)
+            throw new Error("invalid username");
 
+        this.player = { username, animal }
         this.roomcode = roomcode;
 
         console.log("[Socket] Connecting...")
         this.socket = new WebSocket(`ws://localhost:${port}/`);
         this.socket.onerror = (ev: Event) => {
-            console.log('could not connect to game ' + this.gamename)
+            console.log('[Socket] Could not connect to game ' + this.gamename)
         }
         this.socket.onopen = (e) => {
             console.log("[Socket] Connected!")
-            this.send({ type: 'createRoom', gamename: this.gamename, roomcode: roomcode, payload: { test: false } })
-            onConnect(e);
+            console.log("[Socket] Joining room...")
+            this.send({ type: 'joinRoom', gamename: this.gamename, roomcode: roomcode, sender: username, payload: { animal } })
         };
-        this.socket.onmessage = (m) => {
-            console.log("[Socket] " + m)
-            if (this.onMessage)
-                this.onMessage(m);
-        }
-        return this;
-    }
+        this.socket.onmessage = (e: MessageEvent) => {
+            if (verbose) console.log("[Socket] message received")
+            const m = JSON.parse(e.data) as Message;
+            if (verbose) console.log(m)
 
-    message(onMessage: ((m: any) => void)): Socket {
-        this.onMessage = onMessage;
-        // if (this.socket)
-        //     this.socket.onmessage = (m) => {
-        //         console.log("[Socket] " + m)
-        //         onMessage(m);
-        //     }
-        return this;
+            switch (m.type) {
+                case 'joinedRoom': {
+                    console.log("[Socket] Joined room!");
+                    callback();
+                } break;
+
+                default: this.onMessage(m)
+            }
+
+            return false;
+        }
     }
 
     send(object: Message) {
@@ -60,10 +61,9 @@ export default class Socket {
             this.socket.send(JSON.stringify(object));
     }
 
-
     sendInput(payload: any) {
-        if (this.roomcode)
-            this.send({ gamename: this.gamename, roomcode: this.roomcode, type: "input", payload })
+        if (this.roomcode && this.player)
+            this.send({ gamename: this.gamename, roomcode: this.roomcode, type: "input", payload: JSON.stringify(payload), sender: this.player.username })
     }
 
 }

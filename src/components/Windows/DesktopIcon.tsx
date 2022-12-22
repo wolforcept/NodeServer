@@ -1,4 +1,4 @@
-import { FC, ReactElement, useRef, useState } from "react";
+import { FC, ReactElement, useRef } from "react";
 import Draggable from "react-draggable";
 import { DesktopFunctions } from "./Desktop";
 import { WindowInitProps } from "./Window";
