@@ -1,7 +1,7 @@
 import { Button, Card, Select, Space, TextInput, Title } from "@mantine/core";
 import { FC, useState } from "react";
 import Socket from "./Socket";
-import { animalNames, getAnimalSrc } from "assets/Animal"
+import { animalNames } from "assets/Animal"
 import AnimalImage from "components/AnimalImage/AnimalImage";
 
 interface ConnectorProps {
@@ -30,7 +30,7 @@ const Connector: FC<ConnectorProps> = ({ socket, callback }) => {
                     <tbody>
                         <tr>
                             <td>
-                                <AnimalImage animal={animal} height={64}/>
+                                <AnimalImage animal={animal} height={64} />
                             </td>
                             <td>
                                 <TextInput
