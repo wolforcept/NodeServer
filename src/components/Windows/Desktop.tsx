@@ -1,5 +1,6 @@
 import { FC, ReactElement, useState } from 'react';
 import Window, { WindowInitProps } from 'components/Windows/Window'
+import React from 'react';
 
 interface WindowsProps {
     children: any;
@@ -11,11 +12,34 @@ export const DesktopFunctions = {
     closeApp: (_: number) => { },
 }
 
+class Prompt extends React.Component<{ dataUnsaved: boolean }> {
+
+    componentDidMount() {
+        window.addEventListener('beforeunload', this.beforeunload.bind(this));
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('beforeunload', this.beforeunload.bind(this));
+    }
+
+    beforeunload(e: Event) {
+        if (this.props.dataUnsaved) {
+            e.preventDefault();
+            e.returnValue = true;
+        }
+    }
+
+    render() {
+        return <></>
+    }
+}
+
 const Desktop: FC<WindowsProps> = function ({ children }) {
 
     const [size, setSize] = useState(undefined as ({ w: number, h: number } | undefined));
     const [nextId, setNextId] = useState(0);
     const [windows, setWindows] = useState([] as Array<ReactElement>);
+    console.log("windows: " + windows)
 
     DesktopFunctions.openApp = (initProps, makeComponent) => {
         setWindows([...windows, <Window initProps={initProps} key={nextId} id={nextId} >{makeComponent()}</Window>]);
@@ -31,6 +55,7 @@ const Desktop: FC<WindowsProps> = function ({ children }) {
             {children}
             {windows}
             <div className='windowsTaskbar'></div>
+            <Prompt dataUnsaved={windows.length > 0} />
         </div>
     )
 }
