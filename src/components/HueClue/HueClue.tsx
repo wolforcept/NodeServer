@@ -1,4 +1,4 @@
-import { ActionIcon, Container, CopyButton, Text, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, Container, CopyButton, Space, Text, TextInput, Tooltip } from '@mantine/core';
 import Connector from 'components/Connector/Connector';
 import Socket from 'components/Connector/Socket';
 import { ReactElement, useState } from 'react';
@@ -10,76 +10,11 @@ import Player from 'common/Player';
 import { IconZoomQuestion, IconArrowRight, IconCheck, IconCopy } from '@tabler/icons';
 import AnimalImage from 'components/AnimalImage/AnimalImage';
 import Canvas from 'components/Canvas/Canvas';
+import HueCueColors from 'common/hueclue/HueClueColors'
+import { getAnimalSrc } from 'assets/Animal';
+import HueClueColors from 'common/hueclue/HueClueColors';
 
-// const NUMBERS = 25;
-const NUMBERS = 15;
-// const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R']
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-
-const CANVAS_W = 500, CANVAS_H = 500, CANVAS_R = 200;
-const COLORS: Array<string[]> = (() => {
-    const colors = [];
-    for (var x = 0; x < CANVAS_W; x++) {
-        var row: string[] = []
-        for (var y = 0; y < CANVAS_H; y++) {
-            const { a, d: _d } = c2p(x - CANVAS_W / 2, y - CANVAS_W / 2);
-            const d = _d / CANVAS_R // normalize d
-            if (d <= 1) {
-                const rgb = HSVtoRGB((a + Math.PI) / (Math.PI * 2), d, 1);
-                row.push(rgbToHex(rgb))
-            } else {
-                const alpha = .2 * (1 - ((d - 1) / .2));
-                row.push(`rgba(0,0,0, ${alpha})`)
-            }
-        }
-        colors.push(row)
-    }
-    return colors;
-})()
-
-function HSVtoRGB(h: number, s: number, v: number) {
-    let r = 0, g = 0, b = 0;
-    let i, f, p, q, t;
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-    switch (i % 6) {
-        case 0: r = v; g = t; b = p; break;
-        case 1: r = q; g = v; b = p; break;
-        case 2: r = p; g = v; b = t; break;
-        case 3: r = p; g = q; b = v; break;
-        case 4: r = t; g = p; b = v; break;
-        case 5: r = v; g = p; b = q; break;
-    }
-    return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255)
-    };
-}
-
-function c2p(x: number, y: number) {
-    return {
-        a: Math.atan2(y, x),
-        d: Math.sqrt(x * x + y * y),
-    }
-}
-
-function rgbToHex({ r, g, b, a }: { r: number, g: number, b: number, a?: number }) {
-    if (a)
-        return "#" + (
-            [r.toString(16), g.toString(16), b.toString(16), a.toString(16)]
-                .map(x => (x.length === 1) ? "0" + x : x)
-                .join("")
-        )
-    return "#" + (
-        [r.toString(16), g.toString(16), b.toString(16)]
-            .map(x => (x.length === 1) ? "0" + x : x)
-            .join("")
-    )
-}
+const verbose = false;
 
 function HueClue() {
 
@@ -89,7 +24,7 @@ function HueClue() {
     const [players, setPlayers] = useState([] as Player[]);
     const [clue, setClue] = useState("");
     const [colorIsHeld, setColorIsHeld] = useState(false);
-    const [color, setColor] = useState("");
+    const [color, setColor] = useState<{ color: string, x: number, y: number } | undefined>(undefined);
 
     const connector = <Connector socket={socket} callback={() => setIsConnected(true)}></Connector>;
     if (!isConnected)
@@ -100,14 +35,17 @@ function HueClue() {
         switch (m.type) {
             case 'state':
                 setState(JSON.parse(m.payload) as HueClueState)
-                console.log("[HueCue] updated state")
+                if (verbose) console.log("[HueCue] updated state")
+                if (verbose) console.log(state)
                 break;
 
             case 'players':
                 const players = JSON.parse(m.payload) as Player[]
-                console.log(players)
-                if (players)
+                if (players) {
                     setPlayers(players)
+                    if (verbose) console.log("[HueCue] updated players")
+                    if (verbose) console.log(players)
+                }
                 break;
         }
 
@@ -122,23 +60,20 @@ function HueClue() {
     }
 
     function onCanvasMouseMove(x: number, y: number) {
-        if (colorIsHeld)
-            setColor(COLORS[x][y])
-    }
-
-    function sendInput(type: string, payload: any) {
-        socket.sendInput({ type, payload })
+        if (colorIsHeld && state?.type === 'vote')
+            setColor({ color: HueCueColors.colors[x][y], x, y })
     }
 
     function createColorTable(): ReactElement {
 
-        const w = 500, h = 500, radius = 200;
-        // return <></>
+        const w = HueCueColors.canvasWidth;
+        const h = HueCueColors.canvasHeight;
+
         return <Canvas w={w} h={h} onMouseDown={onCanvasMouseDown} onMouseMove={onCanvasMouseMove} onMouseUp={onCanvasMouseUp} draw={
             (ctx: CanvasRenderingContext2D) => {
                 for (var x = 0; x < w; x++) {
                     for (var y = 0; y < h; y++) {
-                        ctx.fillStyle = COLORS[x][y];
+                        ctx.fillStyle = HueCueColors.colors[x][y];
                         ctx.fillRect(x, y, 1, 1);
                     }
                 }
@@ -182,6 +117,48 @@ function HueClue() {
         // return rows;
     }
 
+    function createAllPlayerColorMarkers() {
+        if (!state || state.type !== 'scoring' || !state.playerColors)
+            return <></>
+
+        const names = Object.keys(state.playerColors);
+        return names.map((username: string) => {
+
+            return state.playerColors[username].map(({ color, x, y }: { color: string, x: number, y: number }) => {
+                return createPlayerColorMarker(
+                    {
+                        username,
+                        animal: players?.find(x => x.username === username)?.animal ?? ""
+                    },
+                    color,
+                    x, HueCueColors.canvasHeight - y,
+                    socket.player?.username === username
+                )
+            })
+        })
+
+    }
+
+    function createColorMarker(color: string, x: number, y: number, guessingColor: boolean = false, ownColor: boolean = false): ReactElement {
+        const dx = -HueCueColors.canvasWidth + x - 25;
+        const dy = y - 45;
+        return <svg key={"color" + color + x + y} className='colorMarker' style={{ zIndex: guessingColor ? 10 : 9, position: 'absolute', transform: `translate(${dx}px, ${dy}px)` }} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke={guessingColor ? "white" : "black"} fill={color} stroke-linecap="round">
+            <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"></path>
+        </svg>
+    }
+
+    function createPlayerColorMarker(player: Player, color: string, x: number, y: number, ownColor: boolean): ReactElement {
+        // const dx = -HueCueColors.canvasWidth + x - 25;
+        const dx = x - 25;
+        const dy = -y - 45;
+        return <div className='colorMarker' style={{ zIndex: ownColor ? 15 : 9, position: 'absolute', transform: `translate(${dx}px, ${dy}px)` }}>
+            <svg key={"color" + color + x + y} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="black" fill={color} stroke-linecap="round">
+                <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"></path>
+            </svg>
+            <img height={24} alt={player.animal} src={getAnimalSrc(player.animal)} ></img>
+        </div>
+    }
+
     const scores: ReactElement[] = [];
     if (state) {
         Object.entries(state.scores).forEach(([username, score]) => {
@@ -189,6 +166,7 @@ function HueClue() {
                 <AnimalImage animal={players.find(x => x.username === username)?.animal ?? ""} height={32} />
                 <Text className='username' display='inline' key={username} >{username}: </Text>
                 <Text display='inline' weight={'bold'}>{"" + score}</Text>
+                <Space h="md" />
             </div>)
         });
     }
@@ -196,7 +174,17 @@ function HueClue() {
     function sendClue(): void {
         if (state)
             setState({ ...state, type: "vote" })
-        socket.sendInput({ type: 'clue', payload: clue } as HueClueMessage)
+        socket.sendInput({ type: 'submitClue', payload: clue } as HueClueMessage)
+    }
+
+    function submitColor(): void {
+        socket.sendInput({ type: 'submitColor', payload: color } as HueClueMessage)
+        if (state)
+            setState({ ...state, type: "waitingForOthersToVote" })
+    }
+
+    function submitGoToNextRound(): void {
+        socket.sendInput({ type: 'goToNextRound' } as HueClueMessage)
     }
 
     return (
@@ -208,16 +196,79 @@ function HueClue() {
                         <h3>Score:</h3>
                         {scores}
                     </div>
-                    <div className='yourColor' style={{ backgroundColor: color }}>
-                        test
+                    <div>
+
+                        {state && (state.type === 'vote' || state.type === 'waitingForOthersToVote') &&
+                            (
+                                state?.cluegiver !== socket.player?.username && color
+                                    ? <>
+                                        {
+                                            color.color.length > 7
+                                                ? <>
+                                                    <h3 style={{ paddingBottom: 100, paddingTop: 105 }}>Invalid Color</h3>
+                                                </>
+                                                : <>
+                                                    <h3>Your color:</h3>
+                                                    <div className='yourColor' style={{ backgroundColor: color.color }}></div>
+                                                    {state.type === 'vote'
+                                                        ? <Button className='submitColorButton' onClick={() => submitColor()}>Submit</Button>
+                                                        : <Space h="xl" />
+                                                    }
+                                                </>
+                                        }
+                                    </>
+                                    : <h4>Players are choosing their locations!</h4>
+                            )
+                        }
+
+                        {state?.type === 'clue' &&
+                            (
+                                state?.cluegiver === socket.player?.username
+                                    ? <Container>
+                                        <h3>Color to Guess:</h3>
+                                        {state.guessingColor && <div className='yourColor' style={{ backgroundColor: state.guessingColor.color }}></div>}
+                                        <Space h='xl' />
+                                    </Container>
+                                    : <>
+                                        <h4>Current Clue Giver:</h4>
+                                        <Text>{state ? state.cluegiver : ""}</Text>
+                                    </>
+                            )
+                        }
+
+                        {state?.type === 'scoring' && state?.cluegiver === socket.player?.username &&
+                            <>
+                                <Button onClick={() => submitGoToNextRound()}>Next Round</Button>
+                                <Space h='xl' />
+                            </>
+                        }
                     </div>
                 </div>
 
-                <table>
-                    <tbody>
-                        {createColorTable()}
-                    </tbody>
-                </table>
+                <div className="colorWheel">
+                    {createColorTable()}
+
+                    {state?.guessingColor &&
+                        createColorMarker(state.guessingColor.color, state.guessingColor.x, state.guessingColor.y, true)
+                    }
+
+                    {state?.type === 'vote' && color && state.cluegiver !== socket.player?.username &&
+                        createColorMarker(color.color, color.x, color.y)
+                    }
+
+                    {state?.type === 'vote' && state.cluegiver === socket.player?.username &&
+                        Object.keys(state.playerColors).map((username) => {
+                            return <>{
+                                state.playerColors[username].map(({ color, x, y }: { color: string, x: number, y: number }) => {
+                                    console.log({ pc: state.playerColors, color, x, y })
+                                    return createColorMarker(color, x, y)
+                                })
+                            }</>
+                        })
+                    }
+
+                    {createAllPlayerColorMarkers()}
+                </div>
 
                 <div className='right' >
                     <div className='top'>

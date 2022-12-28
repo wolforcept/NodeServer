@@ -1,5 +1,4 @@
-import React, { useRef, useEffect } from 'react'
-import { getAnimalSrc } from 'assets/Animal';
+import { useRef, useEffect } from 'react'
 import { FC } from 'react';
 
 interface CanvasProps {

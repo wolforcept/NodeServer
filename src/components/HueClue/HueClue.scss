@@ -1,8 +1,6 @@
 .hueclue {
 
-    .yourColor {
-        border-radius: 20px;
-    }
+    font-size: larger;
 
     .main {
         user-select: none;
@@ -16,48 +14,30 @@
         flex-wrap: wrap;
         align-content: stretch;
 
-        font-size: larger;
+        .colorMarker {
+            pointer-events: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
 
-        table .cell {
-            width: 32px;
-            height: 32px;
-            margin: 4px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .score {
-
-            .AnimalImage {
-                margin-right: 8px;
-                transform: translateY(-3px);
+            img {
+                position: absolute;
+                top: 12px;
+                left: 12px;
             }
 
-            .username {
-                margin-right: 5px;
+            svg {
+                width: 50px;
+                height: 50px;
             }
         }
 
-        .left {
-            display: flex;
-            flex-direction: column;
-
-            width: 300px;
-            text-align: center;
-
-            .top {
-                flex-grow: 1;
-            }
-
-            .bottom {
-                margin-bottom: 20px;
-            }
-
-        }
-
+        .left,
         .right {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
 
             width: 300px;
             text-align: center;
@@ -68,6 +48,28 @@
 
             .bottom {
                 margin-bottom: 20px;
+            }
+
+            .score {
+
+                .AnimalImage {
+                    margin-right: 8px;
+                    transform: translateY(-3px);
+                }
+
+                .username {
+                    margin-right: 5px;
+                }
+            }
+
+            .submitColorButton {
+                margin: 10px;
+            }
+
+            .yourColor {
+                height: 150px;
+                width: 150px;
+                border-radius: 20px;
             }
 
         }
